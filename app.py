@@ -233,9 +233,10 @@ ensure_db()
 
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))   # HF Spaces=7860, Render=10000, 本地=5000
     try:
         from waitress import serve
-        print("Starting with waitress on http://0.0.0.0:5000")
-        serve(app, host="0.0.0.0", port=5000, threads=8)
+        print(f"Starting with waitress on http://0.0.0.0:{port}")
+        serve(app, host="0.0.0.0", port=port, threads=8)
     except ImportError:
-        app.run(host="0.0.0.0", port=5000, debug=False)
+        app.run(host="0.0.0.0", port=port, debug=False)
