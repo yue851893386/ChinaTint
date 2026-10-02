@@ -115,6 +115,13 @@ def index():
     return send_from_directory(BASE_DIR, "index.html")
 
 
+# ---------------- 本地地图数据（geo/ 目录，download_geo.py 生成） ----------------
+@app.route("/geo/<path:name>")
+def geo_file(name):
+    safe = os.path.basename(name)          # 防目录穿越
+    return send_from_directory(os.path.join(BASE_DIR, "geo"), safe)
+
+
 # ---------------- 健康检查 ----------------
 @app.route("/api/ping")
 def ping():

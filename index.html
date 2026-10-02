@@ -240,15 +240,24 @@ async function fetchJSON(url) {
 async function loadGeo() {
   const status = document.getElementById('status');
   allFeatures = []; provPolys = []; provList = [];
+  // 优先读本地 /geo/（零外部依赖），失败再回退 DataV 在线接口
+  const LOCAL = n => `/geo/${n}.json`;
   const jobs = [];
   // 地级市
-  MUNICIPALITIES.forEach(c => jobs.push({ kind: 'city', p: fetchJSON(DATAV(c)).catch(() => null) }));
+  MUNICIPALITIES.forEach(c => jobs.push({
+    kind: 'city',
+    p: fetchJSON(LOCAL(c)).catch(() => fetchJSON(DATAV(c)).catch(() => null))
+  }));
   PROVINCES.forEach(c => jobs.push({
     kind: 'city',
-    p: fetchJSON(DATAV_FULL(c)).catch(() => fetchJSON(DATAV(c)).catch(() => null))
+    p: fetchJSON(LOCAL(c + '_full'))
+         .catch(() => fetchJSON(DATAV_FULL(c)).catch(() => fetchJSON(DATAV(c)).catch(() => null)))
   }));
   // 省份轮廓（淡蓝省界用）
-  ALL_PROVINCES.forEach(c => jobs.push({ kind: 'prov', p: fetchJSON(DATAV(c)).catch(() => null) }));
+  ALL_PROVINCES.forEach(c => jobs.push({
+    kind: 'prov',
+    p: fetchJSON(LOCAL('p' + c)).catch(() => fetchJSON(DATAV(c)).catch(() => null))
+  }));
   const results = await Promise.all(jobs.map(j => j.p));
   let fail = 0;
   jobs.forEach((j, i) => {
@@ -264,7 +273,7 @@ async function loadGeo() {
   provList = buildProvList();
   fillProvSelect();
   if (!allFeatures.length) {
-    status.innerHTML = '❌ 地图数据加载失败（需能访问 geo.datav.aliyun.com）<button onclick="loadGeo()">重试</button>';
+    status.innerHTML = '❌ 地图数据加载失败（本地 geo/ 数据缺失且无法访问 DataV）<button onclick="loadGeo()">重试</button>';
     return;
   }
   status.textContent = `一纸山河 v4.1 · 已加载 ${allFeatures.length} 个地级行政区` + (fail ? `（${fail} 个来源失败）` : '');
