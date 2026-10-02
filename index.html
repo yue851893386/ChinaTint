@@ -3,72 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>一纸山河 ChinaTint · 中国地级市可编辑地图</title>
+<title>一纸山河 ChinaTint 2.0 · 中国地级市足迹地图</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; display:flex; height:100vh; overflow:hidden; }
   #map { flex:1; background:#f5f7fa; }
-  #panel { width:320px; min-width:280px; background:#fff; border-left:1px solid #e4e7ed; display:flex; flex-direction:column; }
-  .p-head { padding:14px 16px; border-bottom:1px solid #ebeef5; }
-  .p-head h1 { font-size:16px; color:#303133; }
-  .p-head .sub { font-size:12px; color:#909399; margin-top:4px; }
-  #authBar { display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12px; color:#606266; }
-  #authBar .spacer { flex:1; }
+  #panel { width:330px; min-width:290px; background:#fff; border-left:1px solid #e4e7ed; display:flex; flex-direction:column; }
+  .p-head { padding:14px 16px 10px; border-bottom:1px solid #ebeef5; }
+  .p-head h1 { font-size:18px; color:#303133; letter-spacing:2px; }
+  .p-head .sub { font-size:11px; color:#909399; margin-top:3px; }
+  #modeBar { display:flex; gap:0; margin-top:10px; border:1px solid #dcdfe6; border-radius:7px; overflow:hidden; }
+  #modeBar button { flex:1; border:none; border-radius:0; padding:8px 0; font-size:13px; background:#f5f7fa; color:#909399; }
+  #modeBar button.on { background:#409eff; color:#fff; }
+  .rate-box { display:flex; gap:8px; margin-top:10px; }
+  .rate-item { flex:1; background:#f4f4f5; border-radius:6px; padding:8px 10px; font-size:12px; color:#606266; line-height:1.5; }
+  .rate-item b { display:block; font-size:15px; color:#303133; }
+  .rate-item .pct { color:#e67e22; font-weight:700; }
   #status { font-size:12px; color:#409eff; padding:8px 16px; border-bottom:1px solid #ebeef5; }
   #status button { margin-left:8px; padding:2px 10px; font-size:11px; }
   .p-body { flex:1; overflow-y:auto; padding:12px 16px; }
-  .sec-title { font-size:13px; font-weight:600; color:#606266; margin:12px 0 8px; }
+  .sec-title { font-size:13px; font-weight:600; color:#606266; margin:14px 0 8px; }
   .sec-title:first-child { margin-top:0; }
-  #selInfo { font-size:13px; color:#303133; background:#f4f4f5; border-radius:6px; padding:10px 12px; line-height:1.7; }
-  #selInfo .none { color:#c0c4cc; }
-  .palette { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-  .swatch { width:26px; height:26px; border-radius:5px; cursor:pointer; border:2px solid transparent; transition:transform .1s; }
-  .swatch:hover { transform:scale(1.15); border-color:#303133; }
-  .row { display:flex; gap:8px; margin-top:10px; align-items:center; }
-  input[type=color] { width:42px; height:32px; border:1px solid #dcdfe6; border-radius:6px; padding:2px; cursor:pointer; background:#fff; }
-  input[type=text], input[type=password], select { padding:8px 10px; border:1px solid #dcdfe6; border-radius:6px; font-size:13px; outline:none; background:#fff; }
-  input[type=text]:focus, input[type=password]:focus, select:focus { border-color:#409eff; }
+  input[type=text], input[type=password], input[type=number], select { padding:8px 10px; border:1px solid #dcdfe6; border-radius:6px; font-size:13px; outline:none; background:#fff; width:100%; }
+  input:focus, select:focus { border-color:#409eff; }
   button { font-size:12px; padding:7px 12px; border:1px solid #dcdfe6; background:#fff; border-radius:6px; cursor:pointer; color:#606266; white-space:nowrap; }
   button:hover { color:#409eff; border-color:#409eff; }
   button.primary { background:#409eff; color:#fff; border-color:#409eff; }
   button.primary:hover { background:#66b1ff; }
   button.danger:hover { color:#f56c6c; border-color:#f56c6c; }
-  #search { width:100%; padding:8px 10px; border:1px solid #dcdfe6; border-radius:6px; font-size:13px; outline:none; }
-  #search:focus { border-color:#409eff; }
-  #cityList { margin-top:8px; max-height:260px; overflow-y:auto; border:1px solid #ebeef5; border-radius:6px; }
+  button.mini { padding:4px 9px; font-size:11px; }
+  .row { display:flex; gap:8px; margin-top:8px; align-items:center; }
+  .tier-bar { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+  .tier-btn { flex:1; min-width:52px; padding:6px 2px; font-size:11px; border-radius:5px; text-align:center; border:1px solid #dcdfe6; background:#fff; cursor:pointer; }
+  .tier-btn:hover { border-color:#409eff; }
+  .tier-btn.cur { outline:2px solid #409eff; }
+  .legend { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .legend span { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#606266; }
+  .legend i { width:14px; height:14px; border-radius:3px; display:inline-block; border:1px solid rgba(0,0,0,.08); }
+  #selInfo, #selInfoSimple { font-size:13px; color:#303133; background:#f4f4f5; border-radius:6px; padding:10px 12px; line-height:1.7; }
+  #selInfo .none, #selInfoSimple .none { color:#c0c4cc; }
+  .year-chip { display:inline-flex; align-items:center; gap:4px; margin:3px 4px 0 0; padding:3px 10px; border-radius:20px;
+                border:1px solid #dcdfe6; font-size:12px; color:#606266; cursor:pointer; background:#fff; }
+  .year-chip.on { background:#409eff; border-color:#409eff; color:#fff; }
+  .year-chip .x { font-weight:700; }
+  .palette { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .swatch { width:26px; height:26px; border-radius:5px; cursor:pointer; border:2px solid transparent; }
+  .swatch:hover { transform:scale(1.15); border-color:#303133; }
+  #cityList { margin-top:8px; max-height:220px; overflow-y:auto; border:1px solid #ebeef5; border-radius:6px; }
   .city-item { display:flex; align-items:center; gap:8px; padding:7px 10px; font-size:13px; color:#303133; cursor:pointer; border-bottom:1px solid #f5f7fa; }
   .city-item:hover { background:#ecf5ff; }
   .city-item.active { background:#409eff; color:#fff; }
   .city-item .dot { width:12px; height:12px; border-radius:3px; border:1px solid rgba(0,0,0,.15); flex-shrink:0; }
   .city-item .code { margin-left:auto; font-size:11px; color:#c0c4cc; }
   .city-item.active .code { color:#fff; }
-  #projList { margin-top:8px; border:1px solid #ebeef5; border-radius:6px; max-height:180px; overflow-y:auto; }
+  #projList { margin-top:8px; border:1px solid #ebeef5; border-radius:6px; max-height:160px; overflow-y:auto; }
   .proj-item { display:flex; align-items:center; gap:6px; padding:7px 10px; font-size:13px; border-bottom:1px solid #f5f7fa; }
   .proj-item .pname { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .proj-item .ptime { font-size:11px; color:#c0c4cc; }
   .proj-item button { padding:3px 8px; font-size:11px; }
   .btns { display:flex; gap:8px; flex-wrap:wrap; }
   .p-foot { padding:10px 16px; border-top:1px solid #ebeef5; font-size:11px; color:#c0c4cc; line-height:1.6; }
-  #count { color:#67c23a; }
-  /* 地图顶部检索 */
+  /* 地图检索 */
   #mapSearch { position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:500; width:340px; }
   #mapSearchInput { width:100%; padding:9px 14px; border:1px solid #dcdfe6; border-radius:8px; font-size:13px; outline:none; box-shadow:0 2px 8px rgba(0,0,0,.08); background:#fff; }
-  #mapSearchInput:focus { border-color:#409eff; }
   #searchDrop { display:none; margin-top:6px; background:#fff; border:1px solid #ebeef5; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,.12); max-height:280px; overflow-y:auto; }
   .search-item { display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:13px; color:#303133; cursor:pointer; }
   .search-item.active, .search-item:hover { background:#ecf5ff; }
   .search-item .dot { width:12px; height:12px; border-radius:3px; border:1px solid rgba(0,0,0,.15); flex-shrink:0; }
   .search-item .code { margin-left:auto; font-size:11px; color:#c0c4cc; }
   .search-empty { padding:10px 12px; font-size:12px; color:#c0c4cc; text-align:center; }
-  /* 省/市标注（permanent tooltip，直接挂在图层组上） */
-  .lbl-prov, .lbl-city { background:transparent !important; border:none !important;
-                         box-shadow:none !important; padding:0 !important; pointer-events:none; }
+  /* 标注 */
+  .lbl-prov, .lbl-city { background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important; pointer-events:none; }
   .lbl-prov:before, .lbl-city:before { display:none !important; }
-  .lbl-prov { font-size:13px; font-weight:700; color:#1f2329; letter-spacing:1px;
-              text-shadow:-1px 0 2px #fff, 0 1px 2px #fff, 1px 0 2px #fff, 0 -1px 2px #fff; }
-  .lbl-city { font-size:10px; color:#374151;
-              text-shadow:-1px 0 2px #fff, 0 1px 2px #fff, 1px 0 2px #fff, 0 -1px 2px #fff; }
+  .lbl-prov { font-size:13px; font-weight:700; color:#1f2329; letter-spacing:1px; text-shadow:-1px 0 2px #fff,0 1px 2px #fff,1px 0 2px #fff,0 -1px 2px #fff; }
+  .lbl-city { font-size:10px; color:#374151; text-shadow:-1px 0 2px #fff,0 1px 2px #fff,1px 0 2px #fff,0 -1px 2px #fff; }
   /* 登录弹窗 */
   #authModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1000; align-items:center; justify-content:center; }
   #authModal.show { display:flex; }
@@ -77,73 +86,123 @@
   .auth-box input { width:100%; margin-bottom:10px; }
   .auth-box .row { justify-content:space-between; margin-top:4px; }
   #authMsg { font-size:12px; color:#f56c6c; min-height:16px; margin-top:6px; }
+  #modeHint { font-size:11px; color:#c0c4cc; margin-top:8px; line-height:1.6; }
 </style>
 </head>
 <body>
 <div id="map">
   <div id="mapSearch">
-    <input id="mapSearchInput" type="text" autocomplete="off"
-           placeholder="🔍 检索城市：输入名称或 adcode，回车定位（↑↓ 选择）">
+    <input id="mapSearchInput" type="text" autocomplete="off" placeholder="🔍 检索城市：输入名称或 adcode，回车定位">
     <div id="searchDrop"></div>
   </div>
 </div>
 <div id="panel">
   <div class="p-head">
     <h1>一纸山河</h1>
-    <div class="sub">ChinaTint · 中国地级市可编辑地图 · v4.1</div>
-    <div id="authBar">
-      <span id="authStatus">未登录（可本地编辑）</span>
-      <span class="spacer"></span>
-      <button id="loginBtn">登录</button>
-      <button id="registerBtn">注册</button>
-      <button id="logoutBtn" style="display:none">退出</button>
+    <div class="sub">ChinaTint 2.0 · 中国地级市足迹地图</div>
+    <div id="modeBar">
+      <button id="modeSimple">精简版</button>
+      <button id="modePro">专业版</button>
+    </div>
+    <div class="rate-box">
+      <div class="rate-item">全国足迹<b id="rateAllV">-</b><span class="pct" id="rateAllP"></span></div>
+      <div class="rate-item" id="rateProvBox" style="display:none">当前省份<b id="rateProvV">-</b><span class="pct" id="rateProvP"></span></div>
     </div>
   </div>
   <div id="status">正在加载 GeoJSON…</div>
-  <div class="p-body">
-    <div class="sec-title">云端项目（登录后可保存 / 再次编辑）</div>
-    <div class="row">
-      <input type="text" id="projName" placeholder="项目名称，如：2026销售分布" style="flex:1;min-width:0">
-      <button class="primary" id="saveProjBtn">保存</button>
+
+  <!-- ================= 精简版面板 ================= -->
+  <div class="p-body" id="panelSimple">
+    <div class="sec-title">省份筛选（仅显示该省份）</div>
+    <select id="sProvSel"></select>
+
+    <div class="sec-title">城市筛选（设置去过天数）</div>
+    <select id="sCitySel"></select>
+    <div class="tier-bar" id="sTierBar"></div>
+
+    <div class="sec-title">当前选中</div>
+    <div id="selInfoSimple"><span class="none">在地图或上方列表中选择一个城市</span></div>
+
+    <div class="sec-title">天数图例</div>
+    <div class="legend" id="sLegend"></div>
+
+    <div class="sec-title">图片分享</div>
+    <select id="sShareProv" style="margin-bottom:8px">
+      <option value="">选择要分享的省份…</option>
+    </select>
+    <div class="btns">
+      <button id="sDlAll" class="primary" style="flex:1">下载全国足迹图</button>
     </div>
-    <div id="projList"><div class="proj-item" style="color:#c0c4cc">登录后显示已保存的项目</div></div>
+    <div class="btns" style="margin-top:8px">
+      <button id="sDlProv" style="flex:1">下载选中省份图</button>
+    </div>
+    <div id="modeHint">精简版：数据保存在本机浏览器。切换专业版可使用年份项目、云端保存和自由配色。</div>
+  </div>
+
+  <!-- ================= 专业版面板 ================= -->
+  <div class="p-body" id="panelPro" style="display:none">
+    <div class="sec-title">省份筛选（仅显示该省份）</div>
+    <select id="pProvSel"></select>
 
     <div class="sec-title">当前选中</div>
     <div id="selInfo"><span class="none">在地图或列表中点击一个城市</span></div>
 
-    <div class="sec-title">配色</div>
+    <div class="sec-title">天数图例（优先于自由配色）</div>
+    <div class="legend" id="pLegend"></div>
+
+    <div class="sec-title">年份足迹（点选年份可切换当前城市归属）</div>
+    <div class="row">
+      <input type="number" id="yearInput" placeholder="如 2024" style="width:110px">
+      <button id="yearAddBtn">创建/添加年份</button>
+      <button id="dlMergedBtn">合并导出</button>
+    </div>
+    <div id="yearList" style="margin-top:6px"></div>
+
+    <div class="sec-title">自由配色（未设置天数的城市生效）</div>
     <div class="palette" id="palette"></div>
     <div class="row">
-      <input type="color" id="customColor" value="#409eff">
-      <button class="primary" id="applyBtn">应用自定义颜色</button>
+      <input type="color" id="customColor" value="#409eff" style="width:42px;height:32px;padding:2px">
+      <button class="primary" id="applyBtn">应用</button>
       <button class="danger" id="clearBtn">清除颜色</button>
     </div>
 
     <div class="sec-title">城市列表（<span id="count">0</span>）</div>
-    <input id="search" placeholder="过滤下方城市列表…">
+    <input type="text" id="search" placeholder="过滤列表 / 回车定位第一个结果">
     <div id="cityList"></div>
+
+    <div class="sec-title">云端项目（登录后保存 / 再次编辑）</div>
+    <div id="authBar" style="display:flex;align-items:center;gap:8px;font-size:12px;color:#606266">
+      <span id="authStatus">未登录（可本地编辑）</span>
+      <span style="flex:1"></span>
+      <button id="loginBtn">登录</button>
+      <button id="registerBtn">注册</button>
+      <button id="logoutBtn" style="display:none">退出</button>
+    </div>
+    <div class="row">
+      <input type="text" id="projName" placeholder="项目名称" style="flex:1;min-width:0">
+      <button class="primary" id="saveProjBtn">保存</button>
+    </div>
+    <div id="projList"><div class="proj-item" style="color:#c0c4cc">登录后显示已保存的项目</div></div>
 
     <div class="sec-title">导入 / 导出</div>
     <div class="btns">
-      <button id="exportBtn">导出配色 JSON</button>
-      <button id="importBtn">导入配色 JSON</button>
+      <button id="exportBtn">导出数据 JSON</button>
+      <button id="importBtn">导入数据 JSON</button>
       <input type="file" id="importFile" accept=".json" style="display:none">
-    </div>
-    <div class="btns" style="margin-top:8px">
-      <button id="randomBtn">随机配色</button>
-      <button class="danger" id="clearAllBtn">清空全部配色</button>
+      <button class="danger" id="clearAllBtn">清空全部</button>
     </div>
 
     <div class="sec-title">图片分享</div>
-    <div class="row">
-      <select id="provSelect" style="flex:1;min-width:0"></select>
-      <button id="dlProvBtn">下载该省 PNG</button>
-    </div>
-    <div class="row">
-      <button id="dlAllBtn" style="width:100%">下载全国地图 PNG</button>
+    <select id="pShareProv" style="margin-bottom:8px">
+      <option value="">选择要分享的省份…</option>
+    </select>
+    <div class="btns">
+      <button id="dlAllBtn" style="flex:1">全国足迹图</button>
+      <button id="dlProvBtn" style="flex:1">下载选中省份图</button>
     </div>
   </div>
-  <div class="p-foot">直辖市与港澳按整体展示；海南含省直辖县级单位。Demo 仅供原型使用，正式对外发布请使用自然资源部标准地图并复核边界。</div>
+
+  <div class="p-foot">直辖市与港澳按整体展示；海南含省直辖县级单位。本工具仅供个人记录与学习，公开发布地图内容须使用自然资源部标准地图并依法合规。</div>
 </div>
 
 <div id="authModal">
@@ -162,8 +221,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* ==================== 配置 ==================== */
-const MUNICIPALITIES = [110000, 120000, 310000, 500000, 810000, 820000];  // 京津沪渝港澳：整体
-const PROVINCES = [   // 普通省：_full 取下级（地级市），失败回退为自身
+const MUNICIPALITIES = [110000, 120000, 310000, 500000, 810000, 820000];
+const PROVINCES = [
   130000,140000,150000,210000,220000,230000,320000,330000,340000,350000,
   360000,370000,410000,420000,430000,440000,450000,460000,510000,520000,
   530000,540000,610000,620000,630000,640000,650000,710000
@@ -171,116 +230,84 @@ const PROVINCES = [   // 普通省：_full 取下级（地级市），失败回�
 const ALL_PROVINCES = [...MUNICIPALITIES, ...PROVINCES];
 const DATAV = c => `https://geo.datav.aliyun.com/areas_v3/bound/${c}.json`;
 const DATAV_FULL = c => `https://geo.datav.aliyun.com/areas_v3/bound/${c}_full.json`;
-const PRESET_COLORS = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de',
-  '#3ba272','#fc8452','#9a60b4','#ea7ccc','#f56c6c','#e6a23c','#909399'];
-const DEFAULT_FILL = '#e9edf2';
-const PROV_BORDER = { color: '#7aaede', weight: 2, opacity: .95 };  // 淡蓝细线省界
-const LS_KEY = 'chinaCityColorMap_v2';
-const ZOOM_THRESHOLD = 6;         // 缩小 <6 只显示省名；放大 >=6 显示地级市名
-const EXPORT_SOUTH_CUT = 15.5;    // 三沙远南小岛截断
+const PROV_BORDER = { color: '#7aaede', weight: 2, opacity: .95 };
+const LS_COLOR = 'chinaCityColorMap_v2';
+const LS_VISIT = 'yzsh_visit_v1';
+const LS_MODE = 'yzsh_mode';
+const ZOOM_THRESHOLD = 6;
+const EXPORT_SOUTH_CUT = 15.5;
+const PROJECT_NAME = '一纸山河';
 
-/* ==================== 认证 ==================== */
-const AUTH = {
-  token: localStorage.getItem('cm_token') || '',
-  user: localStorage.getItem('cm_user') || ''
+/* 五档天数配色（需求：1天内 / 1-5天 / 5-15天 / 15-30天 / 30天以上） */
+const TIERS = [
+  { min: 1,  max: 1,  color: '#fde68a', label: '1天内' },
+  { min: 2,  max: 5,  color: '#fbbf24', label: '1-5天' },
+  { min: 6,  max: 15, color: '#fb923c', label: '5-15天' },
+  { min: 16, max: 30, color: '#ea580c', label: '15-30天' },
+  { min: 31, max: 1e9, color: '#9f1239', label: '30天以上' }
+];
+const TIER_VALUES = [0, 1, 5, 15, 30, 999];   // 快捷按钮：未去/1天/5天/15天/30天+/自定义
+function tierOf(days) {
+  if (!days || days <= 0) return -1;
+  if (days <= 1) return 0;
+  if (days <= 5) return 1;
+  if (days <= 15) return 2;
+  if (days <= 30) return 3;
+  return 4;
+}
+
+/* 各省代表性风景（底色）：有 scenery/{adcode}.jpg 则用照片，否则用代表色淡纹。
+   把 320×320 以上的风景照命名为 adcode.jpg 放入 scenery/ 目录即可生效 */
+const PROV_SCENERY = {
+  110000:{n:'紫禁城', c:'#cd6155'},120000:{n:'天津之眼', c:'#7d3c98'},
+  130000:{n:'承德避暑山庄', c:'#27ae60'},140000:{n:'平遥古城', c:'#935116'},
+  150000:{n:'呼伦贝尔草原', c:'#7dcea0'},210000:{n:'大连海岸', c:'#5499c7'},
+  220000:{n:'长白山天池', c:'#45b39d'},230000:{n:'漠河北极村', c:'#85c1e9'},
+  310000:{n:'外滩', c:'#f5b041'},320000:{n:'江南水乡', c:'#5dade2'},
+  330000:{n:'西湖', c:'#52be80'},340000:{n:'黄山', c:'#b9770e'},
+  350000:{n:'鼓浪屿', c:'#ec7063'},360000:{n:'庐山', c:'#48c9b0'},
+  370000:{n:'泰山', c:'#ca6f1e'},410000:{n:'少林寺', c:'#b7950b'},
+  420000:{n:'黄鹤楼', c:'#d68910'},430000:{n:'张家界', c:'#58d68d'},
+  440000:{n:'珠江夜色', c:'#eb984e'},450000:{n:'桂林山水', c:'#52be80'},
+  460000:{n:'三亚海滩', c:'#f0b27a'},500000:{n:'山城夜景', c:'#af7ac5'},
+  510000:{n:'九寨沟', c:'#48c9b0'},520000:{n:'黄果树瀑布', c:'#76d7c4'},
+  530000:{n:'丽江古城', c:'#d2b4de'},540000:{n:'布达拉宫', c:'#d98880'},
+  610000:{n:'兵马俑', c:'#a04000'},620000:{n:'莫高窟', c:'#dc7633'},
+  630000:{n:'青海湖', c:'#5dade2'},640000:{n:'沙坡头', c:'#f7dc6f'},
+  650000:{n:'天山天池', c:'#7fb3d5'},710000:{n:'日月潭', c:'#76b7a9'},
+  810000:{n:'维多利亚港', c:'#5d6d7e'},820000:{n:'大三巴牌坊', c:'#ec7063'}
 };
-async function api(path, opts = {}) {
-  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
-  if (AUTH.token) headers['Authorization'] = 'Bearer ' + AUTH.token;
-  let r;
-  try {
-    r = await fetch(path, { ...opts, headers });
-  } catch (e) {
-    throw new Error('无法连接服务器：请确认已通过 python app.py 启动，并访问 http://localhost:5000（而非直接双击 html 文件）');
-  }
-  const data = await r.json().catch(() => ({}));
-  if (r.status === 401) setAuth('', '');
-  if (!r.ok) throw new Error(data.error || ('请求失败（HTTP ' + r.status + '）'));
-  return data;
-}
-function setAuth(token, user) {
-  AUTH.token = token; AUTH.user = user;
-  if (token) {
-    localStorage.setItem('cm_token', token);
-    localStorage.setItem('cm_user', user);
-  } else {
-    localStorage.removeItem('cm_token');
-    localStorage.removeItem('cm_user');
-  }
-  refreshAuthUI();
-}
-function refreshAuthUI() {
-  const loggedIn = !!AUTH.token;
-  document.getElementById('authStatus').textContent = loggedIn ? '👤 ' + AUTH.user : '未登录（可本地编辑）';
-  document.getElementById('loginBtn').style.display = loggedIn ? 'none' : '';
-  document.getElementById('registerBtn').style.display = loggedIn ? 'none' : '';
-  document.getElementById('logoutBtn').style.display = loggedIn ? '' : 'none';
-  loadProjList();
-}
 
-/* ==================== 全局状态 ==================== */
+/* ==================== 状态 ==================== */
 const map = L.map('map', { zoomControl: true, attributionControl: false, minZoom: 3, maxZoom: 12 });
 map.setView([36.5, 108], 4);
 map.setMaxBounds([[0, 55], [60, 145]]);
-let geoLayer = null;
-let allFeatures = [];      // 地级行政区
-let provPolys = [];        // 省级行政区面（自身边界）
-let provList = [];         // 由城市数据推导的省份列表
-const colorMap = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+let geoLayer = null, sceneryLayer = null, borderLayer = null;
+let allFeatures = [], provPolys = [], provList = [];
+const colorMap = JSON.parse(localStorage.getItem(LS_COLOR) || '{}');
+const visitData = JSON.parse(localStorage.getItem(LS_VISIT) || '{}');
+let mode = localStorage.getItem(LS_MODE) || 'simple';
+let provFilter = null;                 // null=全国
 let selected = null;
 const cityItems = new Map();
 let cityLabelLayer = null, provLabelLayer = null;
 
-/* ==================== 数据加载 ==================== */
-async function fetchJSON(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(r.status);
-  return r.json();
+function saveLocal() {
+  localStorage.setItem(LS_VISIT, JSON.stringify(visitData));
+  localStorage.setItem(LS_COLOR, JSON.stringify(colorMap));
 }
-async function loadGeo() {
-  const status = document.getElementById('status');
-  allFeatures = []; provPolys = []; provList = [];
-  // 优先读本地 /geo/（零外部依赖），失败再回退 DataV 在线接口
-  const LOCAL = n => `/geo/${n}.json`;
-  const jobs = [];
-  // 地级市
-  MUNICIPALITIES.forEach(c => jobs.push({
-    kind: 'city',
-    p: fetchJSON(LOCAL(c)).catch(() => fetchJSON(DATAV(c)).catch(() => null))
-  }));
-  PROVINCES.forEach(c => jobs.push({
-    kind: 'city',
-    p: fetchJSON(LOCAL(c + '_full'))
-         .catch(() => fetchJSON(DATAV_FULL(c)).catch(() => fetchJSON(DATAV(c)).catch(() => null)))
-  }));
-  // 省份轮廓（淡蓝省界用）
-  ALL_PROVINCES.forEach(c => jobs.push({
-    kind: 'prov',
-    p: fetchJSON(LOCAL('p' + c)).catch(() => fetchJSON(DATAV(c)).catch(() => null))
-  }));
-  const results = await Promise.all(jobs.map(j => j.p));
-  let fail = 0;
-  jobs.forEach((j, i) => {
-    const res = results[i];
-    if (res && Array.isArray(res.features)) {
-      res.features.forEach(f => {
-        if (f && f.properties && f.properties.adcode) {
-          (j.kind === 'city' ? allFeatures : provPolys).push(f);
-        }
-      });
-    } else fail++;
-  });
-  provList = buildProvList();
-  fillProvSelect();
-  if (!allFeatures.length) {
-    status.innerHTML = '❌ 地图数据加载失败（本地 geo/ 数据缺失且无法访问 DataV）<button onclick="loadGeo()">重试</button>';
-    return;
-  }
-  status.textContent = `一纸山河 v4.1 · 已加载 ${allFeatures.length} 个地级行政区` + (fail ? `（${fail} 个来源失败）` : '');
-  render();
+function currentCities() {
+  return provFilter ? allFeatures.filter(f => cityProvCode(f) === provFilter) : allFeatures;
 }
+function fillOf(adcode) {
+  const v = visitData[adcode];
+  const t = v ? tierOf(v.days) : -1;
+  if (t >= 0) return TIERS[t].color;
+  return colorMap[adcode] || DEFAULT_FILL();
+}
+function DEFAULT_FILL() { return '#e9edf2'; }
 
-/* ==================== 省份推导（不依赖全国接口） ==================== */
+/* ==================== 省份推导 ==================== */
 const PROV_NAMES = {
   110000:'北京市',120000:'天津市',130000:'河北省',140000:'山西省',150000:'内蒙古自治区',
   210000:'辽宁省',220000:'吉林省',230000:'黑龙江省',310000:'上海市',320000:'江苏省',
@@ -316,76 +343,203 @@ function provCentroid(prov) {
   });
   return n ? [sx / n, sy / n] : null;
 }
-function fillProvSelect() {
-  const sel = document.getElementById('provSelect');
-  if (!sel) return;
-  sel.innerHTML = '';
-  provList.forEach(p => {
-    const o = document.createElement('option');
-    o.value = p.adcode;
-    o.textContent = p.name;
-    sel.appendChild(o);
-  });
+function rateOf(features) {
+  const t = features.length;
+  const v = features.filter(f => tierOf((visitData[f.properties.adcode] || {}).days) >= 0).length;
+  return { v, t, pct: t ? Math.round(v / t * 100) : 0 };
+}
+function updateRates() {
+  const r = rateOf(allFeatures);
+  document.getElementById('rateAllV').textContent = `${r.v}/${r.t}`;
+  document.getElementById('rateAllP').textContent = r.t ? `完成率 ${r.pct}%` : '';
+  const box = document.getElementById('rateProvBox');
+  if (provFilter) {
+    const pv = rateOf(currentCities());
+    const p = provList.find(x => x.adcode === provFilter);
+    box.style.display = '';
+    document.getElementById('rateProvV').textContent = `${pv.v}/${pv.t}`;
+    document.getElementById('rateProvP').textContent = p ? `${p.name.replace(/省|市|壮族自治区|回族自治区|维吾尔自治区|自治区|特别行政区/g,'')} ${pv.pct}%` : '';
+  } else box.style.display = 'none';
 }
 
-/* ==================== 渲染 ==================== */
-function styleFn(f) {
-  return { fillColor: colorMap[f.properties.adcode] || DEFAULT_FILL, weight: 1, color: '#ffffff', fillOpacity: 1 };
+/* ==================== 数据加载 ==================== */
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
 }
-function render() {
-  geoLayer = L.geoJSON({ type: 'FeatureCollection', features: allFeatures }, {
+async function loadGeo() {
+  const status = document.getElementById('status');
+  allFeatures = []; provPolys = []; provList = [];
+  const LOCAL = n => `/geo/${n}.json`;
+  const jobs = [];
+  MUNICIPALITIES.forEach(c => jobs.push({
+    kind: 'city', p: fetchJSON(LOCAL(c)).catch(() => fetchJSON(DATAV(c)).catch(() => null))
+  }));
+  PROVINCES.forEach(c => jobs.push({
+    kind: 'city',
+    p: fetchJSON(LOCAL(c + '_full')).catch(() => fetchJSON(DATAV_FULL(c)).catch(() => fetchJSON(DATAV(c)).catch(() => null)))
+  }));
+  ALL_PROVINCES.forEach(c => jobs.push({
+    kind: 'prov', p: fetchJSON(LOCAL('p' + c)).catch(() => fetchJSON(DATAV(c)).catch(() => null))
+  }));
+  const results = await Promise.all(jobs.map(j => j.p));
+  let fail = 0;
+  jobs.forEach((j, i) => {
+    const res = results[i];
+    if (res && Array.isArray(res.features)) {
+      res.features.forEach(f => {
+        if (f && f.properties && f.properties.adcode) (j.kind === 'city' ? allFeatures : provPolys).push(f);
+      });
+    } else fail++;
+  });
+  provList = buildProvList();
+  fillProvSelects();
+  if (!allFeatures.length) {
+    status.innerHTML = '❌ 地图数据加载失败（本地 geo/ 数据缺失且无法访问 DataV）<button onclick="loadGeo()">重试</button>';
+    return;
+  }
+  status.textContent = `一纸山河 2.0 · 已加载 ${allFeatures.length} 个地级行政区` + (fail ? `（${fail} 个来源失败）` : '');
+  render();
+}
+
+/* ==================== 渲染（支持省份聚焦） ==================== */
+function styleFn(f) {
+  const ad = f.properties.adcode;
+  const t = tierOf((visitData[ad] || {}).days);
+  return {
+    fillColor: fillOf(ad),
+    fillOpacity: t >= 0 ? 0.85 : 0.55,
+    weight: 1, color: '#ffffff'
+  };
+}
+function render() { rebuildMap(); }
+
+function rebuildMap() {
+  const cities = currentCities();
+  if (geoLayer) map.removeLayer(geoLayer);
+  if (sceneryLayer) map.removeLayer(sceneryLayer);
+  if (borderLayer) map.removeLayer(borderLayer);
+  selected = null; cityItems.clear();
+
+  geoLayer = L.geoJSON({ type: 'FeatureCollection', features: cities }, {
     style: styleFn,
     onEachFeature: (f, layer) => layer.on('click', () => select(f, layer))
   }).addTo(map);
-  // 省界：淡蓝细线（省份自身面整体描边，无匹配计算，永不断线）
-  if (provPolys.length) {
-    L.geoJSON({ type: 'FeatureCollection', features: provPolys }, {
+
+  // 省界（淡蓝细线）：全国=全部省；聚焦=仅该省
+  const bpolys = provFilter ? provPolys.filter(f => f.properties.adcode === provFilter) : provPolys;
+  if (bpolys.length) {
+    borderLayer = L.geoJSON({ type: 'FeatureCollection', features: bpolys }, {
       style: { color: PROV_BORDER.color, weight: PROV_BORDER.weight, opacity: PROV_BORDER.opacity, fillOpacity: 0, fill: false },
       interactive: false
     }).addTo(map);
   }
-  buildLabels();
-  updateLabels();
-  map.on('zoomend', updateLabels);
-  buildList('');
-  document.getElementById('count').textContent = allFeatures.length;
+
+  // 风景底色层（放大可见）
+  buildScenery();
+
+  buildLabels(cities);
+  updateOverlays();
+  map.off('zoomend', updateOverlays);
+  map.on('zoomend', updateOverlays);
+
+  buildCityList();
+  fillCitySelects();
+  updateRates();
+  updateSelInfo();
+  document.getElementById('count').textContent = cities.length;
+
+  if (provFilter) {
+    const poly = provPolys.find(f => f.properties.adcode === provFilter);
+    try {
+      if (poly) map.flyToBounds(L.geoJSON(poly).getBounds(), { padding: [50, 50] });
+      else map.flyToBounds(geoLayer.getBounds(), { padding: [50, 50] });
+    } catch (e) {}
+  }
 }
 
-/* ==================== 标注：permanent tooltip 挂在图层组上 ==================== */
+/* 风景底色：SVG pattern 引用 scenery/{adcode}.jpg，图片缺失时回退代表色 */
+function buildScenery() {
+  sceneryLayer = L.layerGroup();
+  const list = provFilter ? provList.filter(p => p.adcode === provFilter) : provList;
+  list.forEach(p => {
+    const poly = provPolys.find(f => f.properties.adcode === p.adcode);
+    const sc = PROV_SCENERY[p.adcode];
+    if (!poly || !sc) return;
+    const lyr = L.geoJSON(poly, {
+      style: { fillColor: sc.c, fillOpacity: 0.35, weight: 0, color: 'none' },
+      interactive: false
+    });
+    lyr.eachLayer(l => { if (l._path) attachPattern(l._path, p.adcode, sc.c); });
+    lyr.addTo(sceneryLayer);
+  });
+}
+function attachPattern(pathEl, adcode, fallbackColor) {
+  try {
+    const svg = pathEl.ownerSVGElement;
+    if (!svg) return;
+    let defs = svg.querySelector('defs.yzsh-defs');
+    if (!defs) {
+      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      defs.setAttribute('class', 'yzsh-defs');
+      svg.insertBefore(defs, svg.firstChild);
+    }
+    const pid = 'yzsh-pt-' + adcode;
+    if (!defs.querySelector('#' + pid)) {
+      const pat = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+      pat.setAttribute('id', pid);
+      pat.setAttribute('patternUnits', 'userSpaceOnUse');
+      pat.setAttribute('width', '220'); pat.setAttribute('height', '220');
+      const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      img.setAttribute('href', 'scenery/' + adcode + '.jpg');
+      img.setAttribute('width', '220'); img.setAttribute('height', '220');
+      img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+      img.addEventListener('error', () => {
+        pat.remove();
+        svg.querySelectorAll(`path[fill="url(#${pid})"]`).forEach(p => p.setAttribute('fill', fallbackColor));
+      });
+      pat.appendChild(img);
+      defs.appendChild(pat);
+    }
+    pathEl.setAttribute('fill', `url(#${pid})`);
+    pathEl.setAttribute('fill-opacity', '0.35');
+  } catch (e) {}
+}
+
+/* ==================== 标注 ==================== */
 function makeTip(ll, text, cls) {
   const m = L.marker([ll[1], ll[0]], { opacity: 0, interactive: false });
   m.bindTooltip(text, { permanent: true, interactive: false, direction: 'center', className: cls });
   return m;
 }
-function buildLabels() {
-  cityLabelLayer = L.layerGroup(allFeatures
-    .map(f => {
-      const ll = f.properties.centroid || f.properties.center;
-      return ll ? makeTip(ll, f.properties.name, 'lbl-city') : null;
-    })
-    .filter(Boolean));
-  provLabelLayer = L.layerGroup(provList
-    .map(p => {
-      const ll = provCentroid(p);
-      return ll ? makeTip(ll, p.name, 'lbl-prov') : null;
-    })
-    .filter(Boolean));
+function buildLabels(cities) {
+  cityLabelLayer = L.layerGroup(cities.map(f => {
+    const ll = f.properties.centroid || f.properties.center;
+    return ll ? makeTip(ll, f.properties.name, 'lbl-city') : null;
+  }).filter(Boolean));
+  provLabelLayer = L.layerGroup(provList.map(p => {
+    const ll = provCentroid(p);
+    return ll ? makeTip(ll, p.name, 'lbl-prov') : null;
+  }).filter(Boolean));
 }
-function updateLabels() {
+function updateOverlays() {
   const zoomedIn = map.getZoom() >= ZOOM_THRESHOLD;
   const has = lyr => lyr && map.hasLayer(lyr);
   if (zoomedIn) {
     if (!has(cityLabelLayer)) cityLabelLayer.addTo(map);
     if (has(provLabelLayer)) map.removeLayer(provLabelLayer);
+    if (sceneryLayer && !has(sceneryLayer)) sceneryLayer.addTo(map);
   } else {
     if (!has(provLabelLayer)) provLabelLayer.addTo(map);
     if (has(cityLabelLayer)) map.removeLayer(cityLabelLayer);
+    if (sceneryLayer && has(sceneryLayer)) map.removeLayer(sceneryLayer);
   }
 }
 
-/* ==================== 选中与上色 ==================== */
+/* ==================== 选中 / 天数 / 年份 ==================== */
 function select(f, layer, fromList) {
-  if (selected && selected.layer) selected.layer.setStyle({ weight: 1, color: '#fff' });
+  if (selected && selected.layer) selected.layer.setStyle(styleFn(selected.f));
   selected = { f, layer };
   if (layer) { layer.setStyle({ weight: 3, color: '#303133' }); layer.bringToFront(); }
   updateSelInfo();
@@ -393,56 +547,381 @@ function select(f, layer, fromList) {
   cityItems.forEach(el => el.classList.remove('active'));
   const item = cityItems.get(f.properties.adcode);
   if (item) { item.classList.add('active'); item.scrollIntoView({ block: 'nearest' }); }
-}
-function updateSelInfo() {
-  const box = document.getElementById('selInfo');
-  if (!selected) { box.innerHTML = '<span class="none">在地图或列表中点击一个城市</span>'; return; }
-  const p = selected.f.properties;
-  const color = colorMap[p.adcode];
-  box.innerHTML = `<b>${p.name}</b><br>adcode：${p.adcode}<br>当前颜色：<span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${color || DEFAULT_FILL};vertical-align:-1px;border:1px solid #ddd"></span> ${color || '未设置'}`;
+  syncCitySelects(f.properties.adcode);
 }
 function findLayer(adcode) {
   let found = null;
   geoLayer.eachLayer(l => { if (l.feature.properties.adcode === adcode) found = l; });
   return found;
 }
-function applyColor(adcode, color) {
-  if (!adcode) return;
-  if (color) colorMap[adcode] = color; else delete colorMap[adcode];
-  localStorage.setItem(LS_KEY, JSON.stringify(colorMap));
-  const layer = findLayer(adcode);
-  if (layer) layer.setStyle({ fillColor: color || DEFAULT_FILL });
+function restyle(adcode) {
+  const l = findLayer(adcode);
+  if (l) l.setStyle(styleFn(l.feature));
   const item = cityItems.get(adcode);
-  if (item) item.querySelector('.dot').style.background = color || DEFAULT_FILL;
-  updateSelInfo();
+  if (item) item.querySelector('.dot').style.background = fillOf(adcode);
+  updateRates();
 }
-function applyAllColors() {
-  localStorage.setItem(LS_KEY, JSON.stringify(colorMap));
-  geoLayer.eachLayer(l => l.setStyle({ fillColor: colorMap[l.feature.properties.adcode] || DEFAULT_FILL }));
-  cityItems.forEach((el, adcode) => { el.querySelector('.dot').style.background = colorMap[adcode] || DEFAULT_FILL; });
-  updateSelInfo();
+function setDays(adcode, days) {
+  const v = visitData[adcode] || { days: 0, years: [] };
+  v.days = days;
+  if (days <= 0 && (!v.years || !v.years.length)) delete visitData[adcode];
+  else visitData[adcode] = v;
+  saveLocal(); restyle(adcode); updateSelInfo(); renderYearList();
 }
+function toggleYear(adcode, year) {
+  const v = visitData[adcode] || { days: 0, years: [] };
+  const i = v.years.indexOf(year);
+  if (i >= 0) v.years.splice(i, 1); else v.years.push(year);
+  if (v.days <= 0 && !v.years.length) delete visitData[adcode];
+  else visitData[adcode] = v;
+  saveLocal(); updateSelInfo(); renderYearList();
+}
+function allYears() {
+  const s = new Set();
+  Object.values(visitData).forEach(v => (v.years || []).forEach(y => s.add(y)));
+  return [...s].sort();
+}
+function updateSelInfo() {
+  const simpleBox = document.getElementById('selInfoSimple');
+  const proBox = document.getElementById('selInfo');
+  if (!selected) {
+    simpleBox.innerHTML = '<span class="none">在地图或上方列表中选择一个城市</span>';
+    proBox.innerHTML = '<span class="none">在地图或列表中点击一个城市</span>';
+    return;
+  }
+  const p = selected.f.properties;
+  const v = visitData[p.adcode] || {};
+  const t = tierOf(v.days || 0);
+  const daysHtml = `
+    <div class="tier-bar" style="margin-top:6px">
+      <button class="tier-btn mini ${t<0?'cur':''}" onclick="setDays(${p.adcode},0)">未去</button>
+      <button class="tier-btn mini ${t===0?'cur':''}" onclick="setDays(${p.adcode},1)">1天内</button>
+      <button class="tier-btn mini ${t===1?'cur':''}" onclick="setDays(${p.adcode},5)">1-5天</button>
+      <button class="tier-btn mini ${t===2?'cur':''}" onclick="setDays(${p.adcode},15)">5-15天</button>
+      <button class="tier-btn mini ${t===3?'cur':''}" onclick="setDays(${p.adcode},30)">15-30天</button>
+      <button class="tier-btn mini ${t===4?'cur':''}" onclick="setDays(${p.adcode},31)">30天+</button>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <input type="number" id="daysCustom_${p.adcode}" placeholder="自定义天数" style="flex:1;min-width:0">
+      <button class="mini" onclick="setDays(${p.adcode}, +document.getElementById('daysCustom_${p.adcode}').value || 0)">设置</button>
+    </div>`;
+  const base = `<b>${p.name}</b> <span style="color:#909399;font-size:11px">${p.adcode}</span><br>
+    已去：<b style="color:${t>=0?TIERS[t].color:'#c0c4cc'}">${t>=0?TIERS[t].label+'（'+v.days+'天）':'未记录'}</b>`;
+  simpleBox.innerHTML = base + daysHtml;
+  // 专业版：附加年份归属
+  const years = allYears();
+  const mine = v.years || [];
+  let yHtml = '';
+  if (years.length) {
+    yHtml = '<div style="margin-top:8px">年份足迹：' + years.map(y =>
+      `<span class="year-chip ${mine.includes(y)?'on':''}" onclick="toggleYear(${p.adcode},'${y}')">${y}${mine.includes(y)?' ✓':''}</span>`
+    ).join('') + '</div>';
+  }
+  proBox.innerHTML = base + daysHtml + yHtml;
+}
+window.setDays = setDays; window.toggleYear = toggleYear;
 
-/* ==================== 城市列表 ==================== */
-function buildList(keyword) {
+/* ==================== 面板控件 ==================== */
+function fillProvSelects() {
+  ['sProvSel', 'pProvSel'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">全国（全部）</option>' + provList.map(p =>
+      `<option value="${p.adcode}">${p.name}</option>`).join('');
+    sel.value = provFilter || '';
+    sel.onchange = () => { provFilter = sel.value ? +sel.value : null; syncProvSelects(); rebuildMap(); };
+  });
+  // 分享省份下拉框（不影响地图，仅用于导出）
+  ['sShareProv', 'pShareProv'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">选择要分享的省份…</option>' + provList.map(p =>
+      `<option value="${p.adcode}">${p.name}</option>`).join('');
+  });
+}
+function syncProvSelects() {
+  ['sProvSel', 'pProvSel'].forEach(id => { document.getElementById(id).value = provFilter || ''; });
+}
+function fillCitySelects() {
+  ['sCitySel', 'pCitySel'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">选择城市…</option>' + currentCities().map(f =>
+      `<option value="${f.properties.adcode}">${f.properties.name}</option>`).join('');
+  });
+}
+function syncCitySelects(adcode) {
+  ['sCitySel', 'pCitySel'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel) sel.value = adcode || '';
+  });
+}
+['sCitySel'].forEach(id => {
+  // 延迟绑定（元素已存在）
+});
+document.getElementById('sCitySel').onchange = e => {
+  const ad = +e.target.value;
+  if (!ad) return;
+  const f = allFeatures.find(x => x.properties.adcode === ad);
+  if (f) select(f, findLayer(ad), false);
+};
+function buildCityList() {
   const box = document.getElementById('cityList');
   box.innerHTML = ''; cityItems.clear();
-  const kw = keyword.trim().toLowerCase();
-  allFeatures
-    .filter(f => !kw || f.properties.name.toLowerCase().includes(kw) || String(f.properties.adcode).includes(kw))
+  currentCities()
     .sort((a, b) => a.properties.adcode - b.properties.adcode)
     .forEach(f => {
       const p = f.properties;
       const div = document.createElement('div');
       div.className = 'city-item';
-      div.innerHTML = `<span class="dot" style="background:${colorMap[p.adcode] || DEFAULT_FILL}"></span>${p.name}<span class="code">${p.adcode}</span>`;
+      div.innerHTML = `<span class="dot" style="background:${fillOf(p.adcode)}"></span>${p.name}<span class="code">${p.adcode}</span>`;
       div.onclick = () => { const l = findLayer(p.adcode); select(f, l, true); };
       box.appendChild(div);
       cityItems.set(p.adcode, div);
     });
 }
+/* 图例 */
+function buildLegend(elId) {
+  document.getElementById(elId).innerHTML =
+    `<span><i style="background:#e9edf2"></i>未去</span>` +
+    TIERS.map(t => `<span><i style="background:${t.color}"></i>${t.label}</span>`).join('');
+}
+buildLegend('sLegend'); buildLegend('pLegend');
+/* 精简版快捷档位条 */
+(function buildTierBar() {
+  const bar = document.getElementById('sTierBar');
+  [['未去', 0], ['1天内', 1], ['1-5天', 5], ['5-15天', 15], ['15-30天', 30], ['30天+', 31]].forEach(([label, val]) => {
+    const b = document.createElement('button');
+    b.className = 'tier-btn mini'; b.textContent = label;
+    b.onclick = () => {
+      if (!selected) return alert('请先选择城市');
+      setDays(selected.f.properties.adcode, val === 31 ? 9999 : val);
+    };
+    bar.appendChild(b);
+  });
+})();
 
-/* ==================== 地图检索（自动补全 + 键盘导航） ==================== */
+/* ==================== 年份列表（专业版） ==================== */
+function renderYearList() {
+  const box = document.getElementById('yearList');
+  const years = allYears();
+  if (!years.length) { box.innerHTML = '<span style="font-size:12px;color:#c0c4cc">暂无年份，输入年份并保存后，选中城市即可点年份 chip 归属</span>'; return; }
+  box.innerHTML = '';
+  years.forEach(y => {
+    const cities = allFeatures.filter(f => (visitData[f.properties.adcode].years || []).includes(y));
+    const chip = document.createElement('span');
+    chip.className = 'year-chip';
+    chip.innerHTML = `${y} · ${cities.length}城`;
+    chip.title = '点击导出该年份足迹图';
+    chip.onclick = () => exportYear(y);
+    box.appendChild(chip);
+  });
+}
+document.getElementById('yearAddBtn').onclick = () => {
+  const y = document.getElementById('yearInput').value.trim();
+  if (!/^\d{4}$/.test(y)) return alert('请输入 4 位年份，如 2024');
+  if (selected) toggleYear(selected.f.properties.adcode, y);
+  else {
+    // 无选中城市时：创建空年份项目
+    const anyAd = Object.keys(visitData)[0];
+    if (!anyAd) visitData['__years__'] = { days: 0, years: [] };
+    const v = visitData['__years__'] || (visitData['__years__'] = { days: 0, years: [] });
+    if (!v.years.includes(y)) v.years.push(y);
+    saveLocal(); renderYearList();
+    alert('已创建年份 ' + y + '，选中城市后点年份 chip 即可归属');
+  }
+};
+
+/* ==================== 模式切换 ==================== */
+function setMode(m) {
+  mode = m;
+  localStorage.setItem(LS_MODE, m);
+  document.getElementById('panelSimple').style.display = m === 'simple' ? '' : 'none';
+  document.getElementById('panelPro').style.display = m === 'pro' ? '' : 'none';
+  document.getElementById('modeSimple').classList.toggle('on', m === 'simple');
+  document.getElementById('modePro').classList.toggle('on', m === 'pro');
+}
+document.getElementById('modeSimple').onclick = () => setMode('simple');
+document.getElementById('modePro').onclick = () => setMode('pro');
+
+/* ==================== 图片导出 ==================== */
+const WATERMARK_URL = (window.location.origin && window.location.origin !== 'null') ? window.location.origin : 'your-site.com';
+function makeCanvas(W, H, dpr) {
+  const canvas = document.createElement('canvas');
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.fillStyle = '#f5f7fa'; ctx.fillRect(0, 0, W, H);
+  return { canvas, ctx };
+}
+function scopeFeatures(scope, year) {
+  // scope: 'all' | provCode；year: 仅导出该年份归属城市（其余灰）
+  let feats = scope === 'all' ? allFeatures : allFeatures.filter(f => cityProvCode(f) === scope);
+  if (year) {
+    const set = new Set(allFeatures.filter(f => (visitData[f.properties.adcode].years || []).includes(year)).map(f => f.properties.adcode));
+    feats = feats.map(f => set.has(f.properties.adcode) ? f : { ...f, __dim: true });
+  }
+  return feats;
+}
+function drawFeatures(ctx, feats, toXY, southCut) {
+  feats.forEach(f => {
+    const polys = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+    const dim = !!f.__dim;
+    const ad = f.properties.adcode;
+    const t = tierOf((visitData[ad] || {}).days);
+    const fillC = dim ? '#e9edf2' : (t >= 0 ? TIERS[t].color : (colorMap[ad] || '#e9edf2'));
+    polys.forEach(rings => {
+      if (southCut !== undefined) {
+        let maxLat = -90;
+        rings[0].forEach(p => { if (p[1] > maxLat) maxLat = p[1]; });
+        if (maxLat < southCut) return;
+      }
+      ctx.beginPath();
+      rings.forEach(ring => {
+        ring.forEach((p, i) => {
+          const [x, y] = toXY(p[0], p[1]);
+          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        });
+        ctx.closePath();
+      });
+      ctx.fillStyle = fillC;
+      ctx.globalAlpha = dim ? 0.45 : 1;
+      ctx.fill('evenodd');
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.stroke();
+    });
+  });
+}
+function strokeOutline(ctx, features, toXY, color, width, southCut) {
+  ctx.beginPath();
+  features.forEach(f => {
+    const polys = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+    polys.forEach(rings => {
+      if (southCut !== undefined) {
+        let maxLat = -90;
+        rings[0].forEach(p => { if (p[1] > maxLat) maxLat = p[1]; });
+        if (maxLat < southCut) return;
+      }
+      rings.forEach(ring => {
+        ring.forEach((p, i) => {
+          const [x, y] = toXY(p[0], p[1]);
+          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        });
+        ctx.closePath();
+      });
+    });
+  });
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.stroke();
+}
+function drawLabel(ctx, text, x, y, font, color, align) {
+  ctx.font = font; ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.92)';
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = color; ctx.fillText(text, x, y);
+}
+function drawWatermark(ctx, W, H) {
+  const urlFont = Math.round(W / 58), nameFont = Math.round(W / 46);
+  const pad = 12, gap = 4;
+  ctx.save();
+  ctx.textAlign = 'right'; ctx.globalAlpha = 0.9;
+  ctx.font = '700 ' + nameFont + 'px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = '#374151'; ctx.textBaseline = 'bottom';
+  ctx.fillText(PROJECT_NAME, W - pad, H - pad - urlFont - gap);
+  ctx.font = urlFont + 'px sans-serif'; ctx.fillStyle = '#6b7280';
+  ctx.fillText(WATERMARK_URL, W - pad, H - pad);
+  ctx.restore();
+}
+function downloadCanvas(canvas, filename) {
+  canvas.toBlob(blob => {
+    if (!blob) return alert('导出失败：浏览器未能生成图片');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }, 'image/png');
+}
+function rateText(feats) {
+  const r = rateOf(feats.filter(f => !f.__dim));
+  return `${r.v}/${r.t}（${r.pct}%）`;
+}
+function exportWholeMap() {
+  if (!allFeatures.length) return alert('地图尚未加载完成，请稍候');
+  const year = exportWholeMap._year || null;
+  const feats = scopeFeatures('all', year);
+  const bounds = { minLon: 72, maxLon: 136, minLat: EXPORT_SOUTH_CUT, maxLat: 54.5 };
+  const pxPerDeg = 16, dpr = 2;
+  const W = Math.round((bounds.maxLon - bounds.minLon) * pxPerDeg);
+  const H = Math.round((bounds.maxLat - bounds.minLat) * pxPerDeg);
+  const { canvas, ctx } = makeCanvas(W, H, dpr);
+  const toXY = (lon, lat) => [(lon - bounds.minLon) / (bounds.maxLon - bounds.minLon) * W, (bounds.maxLat - lat) / (bounds.maxLat - bounds.minLat) * H];
+  drawFeatures(ctx, feats, toXY, EXPORT_SOUTH_CUT);
+  if (provPolys.length) strokeOutline(ctx, provPolys, toXY, '#5b8fc4', 2, EXPORT_SOUTH_CUT);
+  const title = year ? `${year} 年足迹 · 走过 ${feats.filter(f=>!f.__dim).length} 城` : `全国足迹 · 完成率 ${rateText(feats)}`;
+  drawLabel(ctx, title, 16, 24, '700 20px "PingFang SC","Microsoft YaHei",sans-serif', '#1f2329', 'left');
+  const pf = Math.max(11, Math.round(W / 72));
+  provList.forEach(p => {
+    const ll = provCentroid(p);
+    if (!ll || ll[1] < EXPORT_SOUTH_CUT) return;
+    const [x, y] = toXY(ll[0], ll[1]);
+    drawLabel(ctx, p.name, x, y, '700 ' + pf + 'px "PingFang SC","Microsoft YaHei",sans-serif', '#1f2329');
+  });
+  drawWatermark(ctx, W, H);
+  downloadCanvas(canvas, year ? `一纸山河_${year}足迹.png` : '一纸山河_全国足迹.png');
+  exportWholeMap._year = null;
+}
+function exportYear(y) {
+  exportWholeMap._year = y;
+  try { exportWholeMap(); } catch (e) { alert('导出失败：' + e.message); }
+}
+function exportProvince(pc) {
+  if (!allFeatures.length) return alert('地图尚未加载完成，请稍候');
+  // 优先使用传入值，其次读取分享下拉框，最后回退当前筛选省份
+  if (!pc) {
+    const s = document.getElementById('sShareProv');
+    const p = document.getElementById('pShareProv');
+    pc = (s && s.value) || (p && p.value) || provFilter;
+  }
+  if (!pc) return alert('请先在上方下拉框选择要导出的省份');
+  const feats = scopeFeatures(pc, null);
+  const prov = provList.find(p => p.adcode === pc);
+  const provPoly = provPolys.find(f => f.properties.adcode === pc);
+  let minLon = 180, maxLon = -180, minLat = 90, maxLat = -90;
+  const eat = (lon, lat) => {
+    if (lat < EXPORT_SOUTH_CUT) return;
+    if (lon < minLon) minLon = lon; if (lon > maxLon) maxLon = lon;
+    if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat;
+  };
+  feats.forEach(f => {
+    const polys = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+    polys.forEach(rings => rings.forEach(ring => ring.forEach(p => eat(p[0], p[1]))));
+  });
+  if (maxLon < minLon) { minLon = 105; maxLon = 125; minLat = 15.5; maxLat = 42; }
+  const padLon = Math.max((maxLon - minLon) * 0.06, 0.01), padLat = Math.max((maxLat - minLat) * 0.06, 0.01);
+  minLon -= padLon; maxLon += padLon; minLat -= padLat; maxLat += padLat;
+  const W = 1200, dpr = 2;
+  const H = Math.max(1, Math.round(W * (maxLat - minLat) / Math.max(maxLon - minLon, 0.01)));
+  const { canvas, ctx } = makeCanvas(W, H, dpr);
+  const toXY = (lon, lat) => [(lon - minLon) / (maxLon - minLon) * W, (maxLat - lat) / (maxLat - minLat) * H];
+  drawFeatures(ctx, feats, toXY, EXPORT_SOUTH_CUT);
+  if (provPoly) strokeOutline(ctx, [provPoly], toXY, '#5b8fc4', 3, EXPORT_SOUTH_CUT);
+  const title = `${prov ? prov.name : ''}足迹 · 完成率 ${rateText(feats)}`;
+  drawLabel(ctx, title, 16, 24, '700 22px "PingFang SC","Microsoft YaHei",sans-serif', '#1f2329', 'left');
+  const cf = Math.min(16, Math.max(10, Math.round(W / Math.max(maxLon - minLon, 0.01) * 0.85)));
+  feats.forEach(f => {
+    const ll = f.properties.centroid || f.properties.center;
+    if (!ll || ll[1] < EXPORT_SOUTH_CUT) return;
+    const [x, y] = toXY(ll[0], ll[1]);
+    drawLabel(ctx, f.properties.name, x, y, cf + 'px "PingFang SC","Microsoft YaHei",sans-serif', '#374151');
+  });
+  drawWatermark(ctx, W, H);
+  downloadCanvas(canvas, `一纸山河_${prov ? prov.name : '省份'}足迹.png`);
+}
+function exportMerged() { exportWholeMap(); }
+document.getElementById('dlAllBtn').onclick = () => { try { exportWholeMap(); } catch (e) { alert('导出失败：' + e.message); } };
+document.getElementById('dlProvBtn').onclick = () => { try { exportProvince(provFilter); } catch (e) { alert('导出失败：' + e.message); } };
+document.getElementById('sDlAll').onclick = () => { try { exportWholeMap(); } catch (e) { alert('导出失败：' + e.message); } };
+document.getElementById('sDlProv').onclick = () => { try { exportProvince(provFilter); } catch (e) { alert('导出失败：' + e.message); } };
+document.getElementById('dlMergedBtn').onclick = () => { try { exportMerged(); } catch (e) { alert('导出失败：' + e.message); } };
+
+/* ==================== 地图检索 ==================== */
 const msInput = document.getElementById('mapSearchInput');
 const msDrop = document.getElementById('searchDrop');
 let msIndex = -1, msResults = [];
@@ -450,21 +929,16 @@ function msDoSearch() {
   const kw = msInput.value.trim().toLowerCase();
   msIndex = -1;
   if (!kw) { msDrop.style.display = 'none'; msDrop.innerHTML = ''; return; }
-  msResults = allFeatures
+  msResults = currentCities()
     .filter(f => f.properties.name.toLowerCase().includes(kw) || String(f.properties.adcode).includes(kw))
-    .sort((a, b) => a.properties.adcode - b.properties.adcode)
-    .slice(0, 15);
-  if (!msResults.length) {
-    msDrop.innerHTML = '<div class="search-empty">无匹配城市</div>';
-    msDrop.style.display = 'block';
-    return;
-  }
+    .sort((a, b) => a.properties.adcode - b.properties.adcode).slice(0, 15);
+  if (!msResults.length) { msDrop.innerHTML = '<div class="search-empty">无匹配城市</div>'; msDrop.style.display = 'block'; return; }
   msDrop.innerHTML = '';
   msResults.forEach((f, i) => {
     const p = f.properties;
     const div = document.createElement('div');
     div.className = 'search-item';
-    div.innerHTML = `<span class="dot" style="background:${colorMap[p.adcode] || DEFAULT_FILL}"></span>${p.name}<span class="code">${p.adcode}</span>`;
+    div.innerHTML = `<span class="dot" style="background:${fillOf(p.adcode)}"></span>${p.name}<span class="code">${p.adcode}</span>`;
     div.onmousedown = () => msPick(i);
     msDrop.appendChild(div);
   });
@@ -473,8 +947,7 @@ function msDoSearch() {
 function msPick(i) {
   const f = msResults[i];
   if (!f) return;
-  msDrop.style.display = 'none';
-  msInput.blur();
+  msDrop.style.display = 'none'; msInput.blur();
   select(f, findLayer(f.properties.adcode), true);
 }
 let msTimer = null;
@@ -499,13 +972,103 @@ msInput.onkeydown = e => {
   if (items[msIndex]) items[msIndex].scrollIntoView({ block: 'nearest' });
 };
 
-/* ==================== 云端项目 ==================== */
+/* ==================== 专业版：自由配色 ==================== */
+const PRESET_COLORS = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452','#9a60b4','#ea7ccc','#f56c6c','#e6a23c','#909399'];
+const palette = document.getElementById('palette');
+PRESET_COLORS.forEach(c => {
+  const s = document.createElement('div');
+  s.className = 'swatch'; s.style.background = c; s.title = c;
+  s.onclick = () => {
+    if (!selected) return alert('请先选择一个城市');
+    const ad = selected.f.properties.adcode;
+    colorMap[ad] = c; saveLocal(); restyle(ad); updateSelInfo();
+  };
+  palette.appendChild(s);
+});
+document.getElementById('applyBtn').onclick = () => {
+  if (!selected) return alert('请先选择一个城市');
+  const ad = selected.f.properties.adcode;
+  colorMap[ad] = document.getElementById('customColor').value;
+  saveLocal(); restyle(ad); updateSelInfo();
+};
+document.getElementById('clearBtn').onclick = () => {
+  if (!selected) return;
+  const ad = selected.f.properties.adcode;
+  delete colorMap[ad]; saveLocal(); restyle(ad); updateSelInfo();
+};
+document.getElementById('search').oninput = e => {
+  const kw = e.target.value.trim().toLowerCase();
+  cityItems.forEach((el, ad) => {
+    const f = allFeatures.find(x => x.properties.adcode === ad);
+    el.style.display = (!kw || f.properties.name.toLowerCase().includes(kw) || String(ad).includes(kw)) ? '' : 'none';
+  });
+};
+document.getElementById('search').onkeydown = e => {
+  if (e.key !== 'Enter') return;
+  const kw = e.target.value.trim().toLowerCase();
+  const f = currentCities().find(x => x.properties.name.toLowerCase().includes(kw));
+  if (f) select(f, findLayer(f.properties.adcode), true);
+};
+document.getElementById('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify({ visit: visitData, colors: colorMap }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = '一纸山河数据.json'; a.click();
+};
+document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const d = JSON.parse(reader.result);
+      if (d.visit) Object.keys(visitData).forEach(k => delete visitData[k]), Object.assign(visitData, d.visit);
+      if (d.colors) Object.keys(colorMap).forEach(k => delete colorMap[k]), Object.assign(colorMap, d.colors);
+      saveLocal(); rebuildMap(); renderYearList();
+      alert('导入成功');
+    } catch { alert('文件格式错误'); }
+  };
+  reader.readAsText(file);
+};
+document.getElementById('clearAllBtn').onclick = () => {
+  if (!confirm('确定清空全部足迹数据与配色？')) return;
+  Object.keys(visitData).forEach(k => delete visitData[k]);
+  Object.keys(colorMap).forEach(k => delete colorMap[k]);
+  saveLocal(); rebuildMap(); renderYearList();
+};
+
+/* ==================== 云端（专业版） ==================== */
+const AUTH = { token: localStorage.getItem('cm_token') || '', user: localStorage.getItem('cm_user') || '' };
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (AUTH.token) headers['Authorization'] = 'Bearer ' + AUTH.token;
+  let r;
+  try { r = await fetch(path, { ...opts, headers }); }
+  catch (e) { throw new Error('无法连接服务器'); }
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401) setAuth('', '');
+  if (!r.ok) throw new Error(data.error || ('请求失败（HTTP ' + r.status + '）'));
+  return data;
+}
+function setAuth(token, user) {
+  AUTH.token = token; AUTH.user = user;
+  if (token) { localStorage.setItem('cm_token', token); localStorage.setItem('cm_user', user); }
+  else { localStorage.removeItem('cm_token'); localStorage.removeItem('cm_user'); }
+  refreshAuthUI();
+}
+function refreshAuthUI() {
+  const loggedIn = !!AUTH.token;
+  document.getElementById('authStatus').textContent = loggedIn ? '👤 ' + AUTH.user : '未登录（数据存本机）';
+  document.getElementById('loginBtn').style.display = loggedIn ? 'none' : '';
+  document.getElementById('registerBtn').style.display = loggedIn ? 'none' : '';
+  document.getElementById('logoutBtn').style.display = loggedIn ? '' : 'none';
+  loadProjList();
+}
 async function loadProjList() {
   const box = document.getElementById('projList');
   if (!AUTH.token) { box.innerHTML = '<div class="proj-item" style="color:#c0c4cc">登录后显示已保存的项目</div>'; return; }
   try {
     const list = await api('/api/projects');
-    if (!list.length) { box.innerHTML = '<div class="proj-item" style="color:#c0c4cc">暂无项目，保存一个吧</div>'; return; }
+    if (!list.length) { box.innerHTML = '<div class="proj-item" style="color:#c0c4cc">暂无项目</div>'; return; }
     box.innerHTML = '';
     list.forEach(p => {
       const div = document.createElement('div');
@@ -515,28 +1078,26 @@ async function loadProjList() {
       loadBtn.textContent = '加载';
       loadBtn.onclick = () => loadProject(p.id);
       const delBtn = document.createElement('button');
-      delBtn.textContent = '删除';
-      delBtn.className = 'danger';
+      delBtn.textContent = '删除'; delBtn.className = 'danger';
       delBtn.onclick = async () => {
         if (!confirm(`删除项目「${p.name}」？`)) return;
-        try { await api('/api/projects/' + p.id, { method: 'DELETE' }); loadProjList(); }
-        catch (e) { alert(e.message); }
+        try { await api('/api/projects/' + p.id, { method: 'DELETE' }); loadProjList(); } catch (e) { alert(e.message); }
       };
       div.appendChild(loadBtn); div.appendChild(delBtn);
       box.appendChild(div);
     });
-  } catch (e) {
-    box.innerHTML = `<div class="proj-item" style="color:#f56c6c">${e.message}</div>`;
-  }
+  } catch (e) { box.innerHTML = `<div class="proj-item" style="color:#f56c6c">${e.message}</div>`; }
 }
 async function loadProject(pid) {
   try {
     const proj = await api('/api/projects/' + pid);
+    Object.keys(visitData).forEach(k => delete visitData[k]);
+    Object.assign(visitData, proj.visit || {});
     Object.keys(colorMap).forEach(k => delete colorMap[k]);
     Object.assign(colorMap, proj.colors || {});
-    applyAllColors();
+    saveLocal(); rebuildMap(); renderYearList();
     document.getElementById('projName').value = proj.name;
-    alert(`已加载项目「${proj.name}」，可继续编辑后再次保存（同名覆盖）`);
+    alert(`已加载项目「${proj.name}」`);
   } catch (e) { alert(e.message); }
 }
 document.getElementById('saveProjBtn').onclick = async () => {
@@ -544,19 +1105,17 @@ document.getElementById('saveProjBtn').onclick = async () => {
   const name = document.getElementById('projName').value.trim();
   if (!name) return alert('请填写项目名称');
   try {
-    await api('/api/projects', { method: 'POST', body: JSON.stringify({ name, colors: colorMap }) });
+    await api('/api/projects', { method: 'POST', body: JSON.stringify({ name, colors: colorMap, visit: visitData }) });
     alert(`项目「${name}」已保存`);
     loadProjList();
   } catch (e) { alert(e.message); }
 };
-
-/* ==================== 登录 / 注册弹窗 ==================== */
 let authMode = 'login';
 const modal = document.getElementById('authModal');
-function openAuth(mode) {
-  authMode = mode;
-  document.getElementById('authTitle').textContent = mode === 'login' ? '登录' : '注册';
-  document.getElementById('authSubmit').textContent = mode === 'login' ? '登录' : '注册';
+function openAuth(m) {
+  authMode = m;
+  document.getElementById('authTitle').textContent = m === 'login' ? '登录' : '注册';
+  document.getElementById('authSubmit').textContent = m === 'login' ? '登录' : '注册';
   document.getElementById('authMsg').textContent = '';
   modal.classList.add('show');
 }
@@ -578,235 +1137,15 @@ document.getElementById('logoutBtn').onclick = async () => {
   setAuth('', '');
 };
 
-/* ==================== 配色面板 ==================== */
-const palette = document.getElementById('palette');
-PRESET_COLORS.forEach(c => {
-  const s = document.createElement('div');
-  s.className = 'swatch'; s.style.background = c; s.title = c;
-  s.onclick = () => selected ? applyColor(selected.f.properties.adcode, c) : alert('请先选择一个城市');
-  palette.appendChild(s);
-});
-document.getElementById('applyBtn').onclick = () => {
-  if (!selected) return alert('请先选择一个城市');
-  applyColor(selected.f.properties.adcode, document.getElementById('customColor').value);
-};
-document.getElementById('clearBtn').onclick = () => {
-  if (selected) applyColor(selected.f.properties.adcode, null);
-};
-document.getElementById('search').oninput = e => buildList(e.target.value);
-document.getElementById('exportBtn').onclick = () => {
-  const data = allFeatures
-    .filter(f => colorMap[f.properties.adcode])
-    .map(f => ({ adcode: f.properties.adcode, name: f.properties.name, color: colorMap[f.properties.adcode] }))
-    .sort((a, b) => a.adcode - b.adcode);
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'city_colors.json'; a.click();
-};
-document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
-document.getElementById('importFile').onchange = e => {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const arr = JSON.parse(reader.result);
-      arr.forEach(d => { if (d.adcode && d.color) colorMap[d.adcode] = d.color; });
-      applyAllColors();
-    } catch { alert('文件格式错误，应为 [{adcode, name, color}, ...]'); }
-  };
-  reader.readAsText(file);
-};
-document.getElementById('randomBtn').onclick = () => {
-  if (!selected) return alert('请先选择一个城市');
-  applyColor(selected.f.properties.adcode, PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)]);
-};
-document.getElementById('clearAllBtn').onclick = () => {
-  if (!confirm('确定清空全部配色？')) return;
-  Object.keys(colorMap).forEach(k => delete colorMap[k]);
-  applyAllColors();
-};
-
-/* ==================== 图片导出（Canvas 离屏重绘 + 网址水印） ==================== */
-const WATERMARK_URL = (window.location.origin && window.location.origin !== 'null')
-  ? window.location.origin : 'your-site.com';
-
-function makeCanvas(W, H, dpr) {
-  const canvas = document.createElement('canvas');
-  canvas.width = W * dpr; canvas.height = H * dpr;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  ctx.fillStyle = '#f5f7fa';
-  ctx.fillRect(0, 0, W, H);
-  return { canvas, ctx };
-}
-function drawFeatures(ctx, features, toXY, southCut) {
-  features.forEach(f => {
-    const polys = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
-    const fillC = colorMap[f.properties.adcode] || DEFAULT_FILL;
-    polys.forEach(rings => {
-      if (southCut !== undefined) {
-        let maxLat = -90;
-        rings[0].forEach(p => { if (p[1] > maxLat) maxLat = p[1]; });
-        if (maxLat < southCut) return;
-      }
-      ctx.beginPath();
-      rings.forEach(ring => {
-        ring.forEach((p, i) => {
-          const [x, y] = toXY(p[0], p[1]);
-          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-        });
-        ctx.closePath();
-      });
-      ctx.fillStyle = fillC;
-      ctx.fill('evenodd');
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    });
-  });
-}
-function strokeFeaturesOutline(ctx, features, toXY, color, width, southCut) {
-  ctx.beginPath();
-  features.forEach(f => {
-    const polys = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
-    polys.forEach(rings => {
-      if (southCut !== undefined) {
-        let maxLat = -90;
-        rings[0].forEach(p => { if (p[1] > maxLat) maxLat = p[1]; });
-        if (maxLat < southCut) return;
-      }
-      rings.forEach(ring => {
-        ring.forEach((p, i) => {
-          const [x, y] = toXY(p[0], p[1]);
-          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-        });
-        ctx.closePath();
-      });
-    });
-  });
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  ctx.lineJoin = 'round';
-  ctx.stroke();
-}
-function drawLabel(ctx, text, x, y, font, color, align) {
-  ctx.font = font;
-  ctx.textAlign = align || 'center';
-  ctx.textBaseline = 'middle';
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = 'rgba(255,255,255,.92)';
-  ctx.strokeText(text, x, y);
-  ctx.fillStyle = color;
-  ctx.fillText(text, x, y);
-}
-const PROJECT_NAME = '一纸山河';
-function drawWatermark(ctx, W, H) {
-  // 仅右下角：项目名 + 网址，两行右对齐
-  const urlFont = Math.round(W / 58);
-  const nameFont = Math.round(W / 46);
-  const pad = 12, gap = 4;
-  ctx.save();
-  ctx.textAlign = 'right';
-  ctx.globalAlpha = 0.9;
-  // 项目名（加粗）
-  ctx.font = '700 ' + nameFont + 'px "PingFang SC","Microsoft YaHei",sans-serif';
-  ctx.fillStyle = '#374151';
-  ctx.textBaseline = 'bottom';
-  ctx.fillText(PROJECT_NAME, W - pad, H - pad - urlFont - gap);
-  // 网址
-  ctx.font = urlFont + 'px sans-serif';
-  ctx.fillStyle = '#6b7280';
-  ctx.fillText(WATERMARK_URL, W - pad, H - pad);
-  ctx.restore();
-}
-function downloadCanvas(canvas, filename) {
-  canvas.toBlob(blob => {
-    if (!blob) return alert('导出失败：浏览器未能生成图片');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  }, 'image/png');
-}
-
-function exportWholeMap() {
-  if (!allFeatures.length) return alert('地图尚未加载完成，请稍候');
-  const bounds = { minLon: 72, maxLon: 136, minLat: EXPORT_SOUTH_CUT, maxLat: 54.5 };
-  const pxPerDeg = 16, dpr = 2;
-  const W = Math.round((bounds.maxLon - bounds.minLon) * pxPerDeg);
-  const H = Math.round((bounds.maxLat - bounds.minLat) * pxPerDeg);
-  const { canvas, ctx } = makeCanvas(W, H, dpr);
-  const toXY = (lon, lat) => [
-    (lon - bounds.minLon) / (bounds.maxLon - bounds.minLon) * W,
-    (bounds.maxLat - lat) / (bounds.maxLat - bounds.minLat) * H
-  ];
-  drawFeatures(ctx, allFeatures, toXY, EXPORT_SOUTH_CUT);
-  if (provPolys.length) strokeFeaturesOutline(ctx, provPolys, toXY, '#5b8fc4', 2, EXPORT_SOUTH_CUT);
-  const pf = Math.max(11, Math.round(W / 72));
-  provList.forEach(p => {
-    const ll = provCentroid(p);
-    if (!ll || ll[1] < EXPORT_SOUTH_CUT) return;
-    const [x, y] = toXY(ll[0], ll[1]);
-    drawLabel(ctx, p.name, x, y, '700 ' + pf + 'px "PingFang SC","Microsoft YaHei",sans-serif', '#1f2329');
-  });
-  drawWatermark(ctx, W, H);
-  downloadCanvas(canvas, 'china_map.png');
-}
-
-function exportProvince(provCode) {
-  if (!allFeatures.length) return alert('地图尚未加载完成，请稍候');
-  const cities = allFeatures.filter(f => cityProvCode(f) === provCode);
-  const prov = provList.find(p => p.adcode === provCode);
-  const provPoly = provPolys.find(f => f.properties.adcode === provCode);
-  if (!cities.length && !prov) return alert('未找到该省数据');
-  let minLon = 180, maxLon = -180, minLat = 90, maxLat = -90;
-  const eat = (lon, lat) => {
-    if (lat < EXPORT_SOUTH_CUT) return;
-    if (lon < minLon) minLon = lon;
-    if (lon > maxLon) maxLon = lon;
-    if (lat < minLat) minLat = lat;
-    if (lat > maxLat) maxLat = lat;
-  };
-  const src = cities.length ? cities : [provPoly || allFeatures.find(f => f.properties.adcode === provCode)].filter(Boolean);
-  if (!src.length) return alert('未找到该省边界数据');
-  src.forEach(f => {
-    const polys = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
-    polys.forEach(rings => rings.forEach(ring => ring.forEach(p => eat(p[0], p[1]))));
-  });
-  const padLon = Math.max((maxLon - minLon) * 0.06, 0.01), padLat = Math.max((maxLat - minLat) * 0.06, 0.01);
-  minLon -= padLon; maxLon += padLon; minLat -= padLat; maxLat += padLat;
-  const W = 1200, dpr = 2;
-  const H = Math.max(1, Math.round(W * (maxLat - minLat) / Math.max(maxLon - minLon, 0.01)));
-  const { canvas, ctx } = makeCanvas(W, H, dpr);
-  const toXY = (lon, lat) => [
-    (lon - minLon) / (maxLon - minLon) * W,
-    (maxLat - lat) / (maxLat - minLat) * H
-  ];
-  drawFeatures(ctx, src, toXY, EXPORT_SOUTH_CUT);
-  if (provPoly) strokeFeaturesOutline(ctx, [provPoly], toXY, '#5b8fc4', 3, EXPORT_SOUTH_CUT);
-  const cf = Math.min(16, Math.max(10, Math.round(W / Math.max(maxLon - minLon, 0.01) * 0.85)));
-  src.forEach(f => {
-    const ll = f.properties.centroid || f.properties.center;
-    if (!ll || ll[1] < EXPORT_SOUTH_CUT) return;
-    const [x, y] = toXY(ll[0], ll[1]);
-    drawLabel(ctx, f.properties.name, x, y, cf + 'px "PingFang SC","Microsoft YaHei",sans-serif', '#374151');
-  });
-  drawLabel(ctx, (prov ? prov.name : src[0].properties.name), 16, 24,
-    '700 22px "PingFang SC","Microsoft YaHei",sans-serif', '#1f2329', 'left');
-  drawWatermark(ctx, W, H);
-  downloadCanvas(canvas, (prov ? prov.name : 'map') + '.png');
-}
-
-document.getElementById('dlAllBtn').onclick = () => {
-  try { exportWholeMap(); } catch (e) { alert('导出失败：' + e.message); }
-};
-document.getElementById('dlProvBtn').onclick = () => {
-  try { exportProvince(+document.getElementById('provSelect').value); } catch (e) { alert('导出失败：' + e.message); }
-};
-
+/* ==================== 启动 ==================== */
+setMode(mode);
 refreshAuthUI();
+renderYearList();
 loadGeo();
 </script>
+<script async src="//busuanzi.icodekk.com/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div style="position:fixed;bottom:6px;left:10px;z-index:999;font-size:11px;color:#999;background:rgba(255,255,255,.85);padding:2px 8px;border-radius:4px;pointer-events:none">
+  总访问 <span id="busuanzi_value_site_pv"></span> 次 · 访客 <span id="busuanzi_value_site_uv"></span> 人
+</div>
 </body>
 </html>

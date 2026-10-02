@@ -68,6 +68,10 @@ def init_db():
             UNIQUE(user_id, name)
         );
     """)
+    try:
+        conn.execute("ALTER TABLE projects ADD COLUMN visit TEXT NOT NULL DEFAULT '{}'")
+    except sqlite3.OperationalError:
+        pass   # 列已存在
     conn.commit()
     conn.close()
 
@@ -120,6 +124,16 @@ def index():
 def geo_file(name):
     safe = os.path.basename(name)          # 防目录穿越
     return send_from_directory(os.path.join(BASE_DIR, "geo"), safe)
+
+
+# ---------------- 省份风景图（scenery/ 目录，可选） ----------------
+@app.route("/scenery/<path:name>")
+def scenery_file(name):
+    safe = os.path.basename(name)
+    folder = os.path.join(BASE_DIR, "scenery")
+    if not os.path.isdir(folder):
+        return jsonify({"error": "not found"}), 404
+    return send_from_directory(folder, safe)
 
 
 # ---------------- 健康检查 ----------------
@@ -197,16 +211,18 @@ def save_project():
     data = request.get_json(force=True, silent=True) or {}
     name = (data.get("name") or "").strip()[:64]
     colors = data.get("colors")
+    visit = data.get("visit") or {}
     if not name:
         return jsonify({"error": "请填写项目名称"}), 400
-    if not isinstance(colors, dict):
-        return jsonify({"error": "colors 格式错误"}), 400
+    if not isinstance(colors, dict) or not isinstance(visit, dict):
+        return jsonify({"error": "数据格式错误"}), 400
     db = get_db()
     # 同名项目覆盖保存 -> 支持"重复编辑"
-    db.execute("INSERT INTO projects(user_id, name, colors, updated_at) VALUES (?,?,?,?) "
+    db.execute("INSERT INTO projects(user_id, name, colors, visit, updated_at) VALUES (?,?,?,?,?) "
                "ON CONFLICT(user_id, name) DO UPDATE SET colors = excluded.colors, "
-               "updated_at = excluded.updated_at",
-               (g.user["id"], name, json.dumps(colors, ensure_ascii=False), time.time()))
+               "visit = excluded.visit, updated_at = excluded.updated_at",
+               (g.user["id"], name, json.dumps(colors, ensure_ascii=False),
+                json.dumps(visit, ensure_ascii=False), time.time()))
     db.commit()
     return jsonify({"ok": True})
 
@@ -214,11 +230,12 @@ def save_project():
 @app.route("/api/projects/<int:pid>", methods=["GET"])
 @login_required
 def get_project(pid):
-    row = get_db().execute("SELECT name, colors FROM projects WHERE id = ? AND user_id = ?",
+    row = get_db().execute("SELECT name, colors, visit FROM projects WHERE id = ? AND user_id = ?",
                            (pid, g.user["id"])).fetchone()
     if not row:
         return jsonify({"error": "项目不存在"}), 404
-    return jsonify({"name": row["name"], "colors": json.loads(row["colors"])})
+    return jsonify({"name": row["name"], "colors": json.loads(row["colors"]),
+                    "visit": json.loads(row["visit"] or "{}")})
 
 
 @app.route("/api/projects/<int:pid>", methods=["DELETE"])
